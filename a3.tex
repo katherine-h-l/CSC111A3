@@ -1,0 +1,271 @@
+\documentclass[11pt]{article}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage[utf8]{inputenc}
+\usepackage[margin=0.75in]{geometry}
+
+\title{CSC111 Assignment 3: Graphs, Recommender Systems, and Clustering}
+\author{Stewart Chandler, Katherine Luo}
+\date{\today}
+
+\newcommand{\Z}{\mathbb{Z}}
+\newcommand{\cO}{\mathcal{O}}
+
+\begin{document}
+\maketitle
+
+\section*{Part 1: The book review graph and simple recommendations}
+
+\begin{enumerate}
+
+\item[1.]
+Complete this part in the provided \texttt{a3\_part1.py} starter file.
+Do \textbf{not} include your solution in this file.
+
+\item[2.]
+Analysis of the \texttt{Graph.add\_vertex} fucntion.
+\begin{verbatim}
+0  |def add_vertex(self, item: Any, kind: str) -> None:
+1  |    if item not in self._vertices:
+2  |        self._vertices[item] = _Vertex(item, kind)
+\end{verbatim}
+\textit{Analysis.}\\
+Let $RT_{g.av} \in \mathbb{R}^+$ denote the runtime in steps of \texttt{Graph.add\_vertex}. 
+\begin{itemize}
+    \item (Line 1): 1 step for the if statement, dictionary lookup is constant time so 1 step for the in operator. (2 Steps)
+    \item (Line 2): Adding an item to a dictionary is constant time so 1 step. (1 Step)
+\end{itemize}
+Totaling up the steps we get $RT_{g.av} = 2 + 1 = 3$.  The asymptotic runtime of the \texttt{Graph.add\_vertex} 
+function is $\Theta(3) = \Theta(1)$.
+
+Analysis of the \texttt{Graph.add\_edge} fucntion.
+\begin{verbatim}
+0  |def add_edge(self, item1: Any, item2: Any) -> None:
+1  |    if item1 in self._vertices and item2 in self._vertices:
+2  |        v1 = self._vertices[item1]
+3  |        v2 = self._vertices[item2]
+4  |
+5  |        v1.neighbours.add(v2)
+6  |        v2.neighbours.add(v1)
+7  |    else:
+8  |        raise ValueError
+\end{verbatim}
+\textit{Analysis.}\\
+Let $RT_{g.ae} \in \mathbb{R}^+$ denote the runtime in steps of \texttt{Graph.add\_edge}.
+\begin{itemize}
+    \item (Line 1): 1 step for the if statement, dictionary lookup is constant time so 1 step for each in operator. (3 Steps)
+    \item (Line 2-3): Adding an item to a dictionary is constant time so 1 step for each insertion. (2 Steps)
+    \item (Line 5-6): Adding an item to a set is constant time so 1 step for each insertion. (2 Steps)
+    \item (Line 8): This will not be reached as a result of calling the \texttt{load\_review\_graph} function
+    as it is only called directly after adding the vertices to \texttt{self.\_vertices}, thus we can consider it to be 0 steps. (0 Steps)
+\end{itemize}
+Totaling up the steps we get $RT_{g.ae} = 3 + 2 + 2 + 0 = 7$.  The asymptotic runtime of the \texttt{Graph.add\_edge} 
+function is $\Theta(7) = \Theta(1)$.
+
+
+Analysis of the \texttt{load\_review\_graph} fucntion.
+\begin{verbatim}
+0  |def load_review_graph(reviews_file: str, book_names_file: str) -> Graph:
+1  |    graph = Graph()
+2  |    with open(book_names_file) as book_names_csv:
+3  |        names = csv.reader(book_names_csv)
+4  |        book_names = {name[0]: name[1] for name in names}
+5  |
+6  |    with open(reviews_file) as reviews_file_csv:
+7  |        reviews = csv.reader(reviews_file_csv)
+8  |
+9  |        for review in reviews:
+10 |            graph.add_vertex(review[0], 'user')
+11 |            graph.add_vertex(book_names[review[1]], 'book')
+12 |
+13 |            graph.add_edge(review[0], book_names[review[1]])
+14 |
+15 |    return graph
+\end{verbatim}
+\textit{Analysis.}\\
+Let $m \in \Z^+$ be the number of lines in \texttt{reviews\_file} and let $n \in \Z^+$ be the number of lines in 
+\texttt{book\_names\_file}.\\
+Let $RT_{lrg} : \mathbb{N} \times \mathbb{N} \to \mathbb{R}^+$ denote the runtime in steps of \texttt{load\_review\_graph} as a function of $m$ and $n$.
+\begin{itemize}
+    \item (Line 1): Initializing an empty graph is constant time. (1 Step)
+    \item (Line 2): Opening a file is constant time. (1 Step)
+    \item (Line 3): Initializing a \texttt{csv.reader} object is constant time. (1 Step)
+    \item (Line 4): Comprehension iterating through names and assigning them to values in a dictionary 
+    will take $m$ (\texttt{len(names)}) steps. ($m$ Steps)
+    \item (Line 6): Opening a file is constant time. (1 Step)
+    \item (Line 7): Initializing a \texttt{csv.reader} object is constant time. (1 Step)
+    \item (Lines 9-13): For loop with $n$ (\texttt{len(reviews)}) iterations: 
+    \begin{itemize}
+        \item (Line 10-11): Calls \texttt{Graph.add\_vertex} for a total of $RT_{g.av} = 3$ steps each line. (6 Steps) 
+        \item (Line 13): Calls \texttt{Graph.add\_vertex} for a total of $RT_{g.ae} = 7$ steps. (7 Steps)
+    \end{itemize}
+    Adding it up we get $6 + 7 = 13$ steps eahc iteration.\\
+    This totals to $\displaystyle \sum_{n = 1}^{n} 13 = 13 n$ steps. ($13 n$ Steps)
+    \item (Line 15): Return statement is constant time. (1 Step)
+\end{itemize}
+Totaling up the steps we get $RT_{lrg} = 1 + 1 + 1 + m + 1 + 1 + 13n + 1 = 6 + m + 13n$.  The asymptotic runtime of 
+the \texttt{load\_review\_graph} function is $\Theta(6 + m + 13n) = \Theta(m + n)$.
+
+\item[3.]
+Complete this part in the provided \texttt{a3\_part1.py} starter file.
+Do \textbf{not} include your solution in this file.
+
+\item[4.]
+Complete this part in the provided \texttt{a3\_part1.py} starter file.
+Do \textbf{not} include your solution in this file.
+
+\end{enumerate}
+
+\section*{Part 2: Weighted graphs, recommendations, review prediction}
+
+Complete this part in the provided \texttt{a3\_part2\_recommendations.py} and \texttt{a3\_part2\_predictions.py} starter files.
+Do \textbf{not} include your solution in this file.
+
+\newpage
+
+\section*{Part 3: Finding book clusters}
+
+\begin{enumerate}
+
+\item[1.]
+Complete this part in the provided \texttt{a3\_part3.py} starter file.
+Do \textbf{not} include your solution in this file.
+
+\item[2.]
+Complete this part in the provided \texttt{a3\_part3.py} starter file.
+Do \textbf{not} include your solution in this file.
+
+\item[3.]
+
+\begin{enumerate}
+Analysis of the \texttt{cross\_cluster\_weight} function
+\begin{verbatim}
+0  |def load_review_graph(reviews_file: str, book_names_file: str) -> Graph:
+1  |    total_weight = 0
+2  |    for v1 in cluster1:
+3  |        for v2 in cluster1:
+4  |            total_weight += book_graph.get_weight(v1, v2)
+5  |
+6  |    return total_weight / (len(cluster1) * len(cluster2))
+\end{verbatim}
+\textit{Analysis.}\\
+Let $m_1 \in \Z^+$ be the size of \texttt{cluster1} and let $m_2 \in \Z^+$ be the size of \texttt{cluster2}.\\
+Let $RT_{ccw} : \mathbb{N} \times \mathbb{N} \to \mathbb{R}^+$ denote the runtime in steps of \texttt{cross\_cluster\_weight} as a function of $m_1$ and $m_2$.
+\begin{itemize}
+    \item (Line 1): Assignment of a varible is constant time. (1 Step)
+    \item (Lines 2-4): For loop $m_1$ (\texttt{len(cluster1)}) iterations:
+    \begin{itemize}
+        \item (Lines 3-4): For loop $m_2$ (\texttt{len(cluster2)}) iterations:
+        \begin{itemize}
+            \item (Line 4): \texttt{WeightedGraph.get\_weight} is constant time so 1 step, and += is also 1 step. (2 Steps)
+        \end{itemize}
+        Hence, we have 2 steps per iteration.\\
+        Totaling to $\displaystyle \sum_{n = 1}^{m_2} 2 = 2m_2$ steps. ($2m_2$ Steps)
+    \end{itemize}
+    Thus, there are $2m_2$ steps per iteration.\\
+    This gives us a total of $\displaystyle \sum_{n = 1}^{m_1} 2m_2 = 2 m_1 m_2$ steps for the for loop. ($2 m_1 m_2$ Steps)
+    \item (Line 6) Return is constant time, 1 step, the len operator takes constant time or 1 step for each use, 
+    and the multiplication takes constant time adding another step. (4 Steps)  
+\end{itemize} 
+Totaling up all the steps we get $RT_{ccw} = 1 + 2 m_1 m_2 + 4 = 2 m_1 m_2 + 5$.  The asymptotic runtime of 
+the \texttt{cross\_cluster\_weight} function is $\Theta(2 m_1 m_2 + 5) = \Theta(m_1m_2)$.
+
+
+\item[(b)]
+Analysis of the upper bound of the inner loop of \texttt{find\_cluster\_random}.
+\begin{verbatim}
+0  |for c2 in clusters:
+1  |    if c1 is not c2:
+2  |        score = cross_cluster_weight(graph, c1, c2)
+3  |        if score > best:
+4  |            best = score
+5  |            best_c2 = c2
+\end{verbatim}
+\textit{Analysis.}\\
+Let $n \in \Z^+$ be the number of verticies in \texttt{graph}.\\
+For all $i \in \Z^+$, let $m_i \in \Z^+$ denote the size of \texttt{clusters[i]}.\\
+Let $j \in \Z^+$ denote the size of \texttt{c1}.\\
+Let $k \in \Z^+$ be the size of \texttt{clusters}.\\
+Let $RT_{il} : \mathbb{N} \to \mathbb{R}^+$ denote the runtime in steps of the inner loop as a function of $n$.\\
+To find an upper bound on $RT_{il}(n)$.
+\begin{itemize}
+    \item (Line 0): For loop $k$ (\texttt{len(clusters)}) iterations:\\
+    Let $i \in \Z^+$ be the iteration of $k$ 
+    \begin{itemize}
+        \item (Line 1): If statement is constant time 1 step, \texttt{is not} is constant time 1 step. 
+        As we are looking for an upper bound we can assume this if statement will always be true. (2 Steps)
+        \item (Line 2): $RT_{ccw} \in \Theta(j m_i)$ so we can assume that it will take $j m_i$ steps, 
+        plus 1 step for variable assignment. ($j m_i + 1$ Steps)
+        \item (Line 3): If statement is constant time 1 step, comparison is constant time, 1 step. 
+        As we are finding an upper bound we can assume that the if statement will be true. (2 Steps)
+        \item (Lines 4-5): Variable assignment is constant time so 1 step for each line. (2 Steps)
+    \end{itemize}
+    Thus, the runtime for an interation of the loop is at most $2 + j m_i + 1 + 2 + 2 = j m_i + 7$ steps.\\
+    Summing it up, the total runtime of the loop is at most $\displaystyle \sum_{i = 1}^{k} (j m_i + 7) = \sum_{i = 1}^{k} j m_i + 7k = j\sum_{i = 1}^{k} m_i + 7k$ steps.
+\end{itemize}
+Therefore we can say that $RT_{il}(n) \leq \displaystyle j\sum_{i = 1}^{k} m_i + 7k$.\\
+Furthermore, as \texttt{clusters} is a set of disjointed subsets of \texttt{graph.\_vertices} that's union is \texttt{graph.\_vertices},
+$\displaystyle \sum_{i = 1}^k m_i = n$, thus, $RT_{il}(n) \leq jn + 7k$.\\
+Additionally, as \texttt{c1} is a subset of \texttt{clusters}, $j \leq n$, thus, $RT_{il}(n) \leq jn + 7k \leq n^2 + 7k$.\\
+Furthermore, as \texttt{clusters} is a partition of \texttt{graph.\_vertices}, we know that $k \leq n$, 
+thus $RT_{il}(n) \leq n^2 + 7k \leq n^2 + 7n$.\\
+Therefore, as $RT_{il}(n) \leq n^2 + 7n$, $RT_{il}(n) \in \cO(n^2 + 7n) = \cO(n^2)$.
+
+
+\item[(c)]
+Analysis of the upper bound of \texttt{find\_cluster\_random}.
+\begin{verbatim}
+0  |def find_clusters_random(graph: WeightedGraph, num_clusters: int) -> list[set]:
+1  |    clusters = [{book} for book in graph.get_all_vertices()]
+2  |
+3  |    for _ in range(0, len(clusters) - num_clusters):
+4  |        print(f'{len(clusters)} clusters')
+5  |
+6  |        c1 = random.choice(clusters)
+7  |        # Pick the best cluster to merge c1 into.
+8  |        best = -1
+9  |        best_c2 = None
+10 |
+11 |        for c2 in clusters:
+12 |            if c1 is not c2:
+13 |                score = cross_cluster_weight(graph, c1, c2)
+14 |                if score > best:
+15 |                    best = score
+16 |                    best_c2 = c2
+17 |
+18 |        best_c2.update(c1)
+19 |        clusters.remove(c1)
+20 |
+21 |    return clusters
+\end{verbatim}
+\textit{Analysis.}\\
+Let $n \in \Z^+$ be the number of verticies in \texttt{graph}.\\
+Let $k \in \Z^+$ be the value of \texttt{num\_clusters}.\\
+Let $RT_{fcr} : \mathbb{N} \times \mathbb{N} \to \mathbb{R}^+$ denote the runtime in steps of \texttt{find\_cluster\_random} as a function of $n$ and $k$.\\
+To find an upper bound on $RT_{fcr}(n, k)$.
+\begin{itemize}
+    \item (Line 1): Comprehension takes $n$ (\texttt{len(graph.\_vertices)}) steps. ($n$ Steps)
+    \item (Lines 3-19): For loop, $n - k$ iterations:
+    \begin{itemize}
+        \item (Line 4): \texttt{print} function takes constant time, 1 step.  \texttt{len} takes constant time, 1 step. (2 Steps)
+        \item (Line 6): \texttt{random.choice} takes constant time, 1 step. Variable assignment takes constant time, 1 step. (2 Steps)
+        \item (Lines 8-9): Variable assignment takes constant time, 1 step for each line. (2 Steps)
+        \item (Lines 11-16): As we have shown the inner loop is $\cO (n^2)$ so we may assume that it takes at most $n^2$ steps. ($n^2$ Steps)
+        \item (Line 18): \texttt{set.update} takes \texttt{len(c1)} steps, however as \texttt{len(c1)}$\leq n$, takes at most $n$ steps. ($n$ Steps)
+        \item (Line 19): \texttt{set.remove} takes constant time, 1 step. (1 Step)
+    \end{itemize}
+    Thus, for each iteration the for loop takes at most $2 + 2 + 2 + n^2 + n + 1 = n^2 + n + 7$ steps.\\
+    As such, the loop takes at most $\displaystyle \sum_{i = 1}^{n - k} (n^2 + n + 7) = (n - k)(n^2 + n + 7)$. 
+    ($(n - k)(n^2 + n + 7)$ Steps)
+    \item (Line 21): Return statment takes constant time 1 step. (1 Step)
+\end{itemize}
+Totaling it up we get that \texttt{find\_cluster\_random} takes at most $n + (n - k)(n^2 + n + 7) + 1$ steps.\\
+Therefore we can say that $RT_{fcr}(n, k) \leq n + (n - k)(n^2 + n + 7) + 1$.\\
+As such, $RT_{fcr} \in \cO(n + (n - k)(n^2 + n + 7) + 1) = \cO(n^2(n - k))$.
+
+\item[(d)]
+\emph{Not to be handed in.}
+\end{enumerate}
+
+\end{enumerate}
+\end{document}
