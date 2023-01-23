@@ -16,6 +16,7 @@ expressly prohibited. For more information on copyright for CSC111 materials,
 please consult our Course Syllabus.
 
 This file is Copyright (c) 2021 David Liu and Isaac Waller.
+The assignment was written by Katherine Luo and Stewart Chandler. 
 """
 import random
 
